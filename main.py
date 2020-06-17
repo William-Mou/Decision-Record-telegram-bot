@@ -21,7 +21,8 @@ def start(update, context):
     if id not in group:
         group[id] = Decision.Decision(id)
     context.bot.send_message(
-        chat_id=update.effective_chat.id, text="決策紀錄機器人在此為您服務")
+        chat_id=update.effective_chat.id, text="決策紀錄機器人在此為您服務，請輸入您投資的股票編號")
+    group[id].set_stock_status(True)
 
 
 start_handler = CommandHandler('start', start)
@@ -30,7 +31,8 @@ dispatcher.add_handler(start_handler)
 
 def add(update, context):
     id = update.effective_chat.id
-    group[id].set_decision(context.args[0], 0)
+    group[id].set_bbi(context.args[0], 0)
+    group[id].set_decision(context.args[1], 0)
     group[id].set_timeline(str(update.message.date), 0)
 
 
@@ -50,6 +52,11 @@ dispatcher.add_handler(edit_handler)
 
 def print(update, context):
     id = update.effective_chat.id
+
+    group[id].show_stock()
+    context.bot.send_photo(
+        chat_id=update.effective_chat.id, photo=open(str(id)+"_stock.png", 'rb'))
+
     group[id].print_pic()
     context.bot.send_photo(
         chat_id=update.effective_chat.id, photo=open(str(id)+".png", 'rb'))
@@ -74,6 +81,28 @@ For more help please see the project's page on Github
 
 help_handler = CommandHandler('help', help)
 dispatcher.add_handler(help_handler)
+
+
+def no(update, context):
+    input = str(update.message.text).split()
+
+    #ontext.bot.send_message(
+    #    chat_id=update.effective_chat.id, text=update.message.text)
+
+    id = update.effective_chat.id
+    if group[id].get_stock_status() == True:
+        group[id].set_stock(input[0])
+        context.bot.send_message(
+            chat_id=update.effective_chat.id, text="決策紀錄機器人已紀錄您的股票編號")
+        group[id].set_stock_status(False)
+    else:
+        group[id].set_bbi(input[0], 0)
+        group[id].set_decision(input[1], 0)
+        group[id].set_timeline(str(update.message.date), 0)
+
+
+no_handler = MessageHandler(Filters.text & (~Filters.command), no)
+dispatcher.add_handler(no_handler)
 
 
 def unknown(update, context):
